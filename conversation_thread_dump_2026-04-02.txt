@@ -1,0 +1,338 @@
+===============================================================================
+CONVERSATION THREAD DUMP
+===============================================================================
+
+Date: 2026-04-02
+Repo location: /home/smullersoares/projects/software/swot_downloader
+Original work context: /home/smullersoares/projects/science/coastal_open_ocn_xchange
+
+-------------------------------------------------------------------------------
+OVERVIEW
+-------------------------------------------------------------------------------
+
+This file is a cleaned archive of the AI-assisted work session.
+
+It captures:
+  - the user prompt at each major stage,
+  - the main actions taken by the AI agent,
+  - the concrete outcome of each stage.
+
+It does not include private chain-of-thought.
+
+
+===============================================================================
+PHASE 01 - INITIAL PROBLEM: FILENAME MISMATCH
+===============================================================================
+
+PROMPT
+  The notebook workflow failed because the reader expected Expert filenames,
+  while the available files used an Unsmoothed naming pattern.
+
+AGENT ACTIONS
+  1. Updated the SWOT cycle reader logic to support flexible file matching
+     instead of a hard-coded Expert-only pattern.
+  2. Added variable-name and scaled-array handling so dataset opening would be
+     more robust across product variants.
+  3. Revalidated cycle 503 discovery.
+
+RESULT
+  - File discovery succeeded for the target cycle.
+
+
+===============================================================================
+PHASE 02 - STEP 3 ASSEMBLY FAILURE
+===============================================================================
+
+PROMPT
+  The track assembler failed when concatenating cycles with inconsistent
+  num_lines lengths.
+
+  The user requested using merge_tracks=False rather than redesigning the
+  assembler.
+
+AGENT ACTIONS
+  1. Switched the Step 3 notebook workflow to cycle-scoped assembly with
+     merge_tracks=False.
+  2. Avoided ragged concatenation by working with per-cycle and per-track
+     datasets.
+  3. Extracted center-swath segments and computed a one-cycle PSD from
+     equal-length finite segments.
+
+RESULT
+  - Step 3 ran successfully for cycle 503.
+
+
+===============================================================================
+PHASE 03 - STEP 4 MULTI-CYCLE TRACK-013 SPECTRUM
+===============================================================================
+
+PROMPT
+  Read track 013 across all available cycles, extract center segments, avoid
+  land using the Wave-Vortex-style masking approach, and compute the average
+  wavenumber spectrum with 95% confidence limits.
+
+AGENT ACTIONS
+  1. Added Step 4 notebook cells for track 013 across all available cycles.
+  2. Implemented helpers for cycle and track parsing, scaled decoding,
+     spectral averaging, and center-profile extraction.
+  3. Used quality filtering, finite-data checks, latitude bounds, and
+     contiguous-segment selection.
+  4. Computed ensemble PSDs profile by profile, then averaged them with
+     chi-squared confidence intervals.
+  5. Fixed an initial broadcasting issue by switching from 2-D input to
+     per-profile FFT computation and stacking.
+
+RESULT
+  - Step 4 succeeded.
+  - 96 usable center profiles were found across 48 cycles.
+  - Common target length was 1864 points.
+  - Degrees of freedom for the confidence interval was 192.
+
+
+===============================================================================
+PHASE 04 - STEP 5 SMOOTHED VS UNSMOOTHED COMPARISON
+===============================================================================
+
+PROMPT
+  Load L3 2 km smoothed data for track 13 using the same cycles used for the
+  L3 unsmoothed analysis.
+
+  Create a final comparison plot showing the 2 km smoothed and 240 m
+  unsmoothed spectra.
+
+AGENT ACTIONS
+  1. Added Step 5 cells to discover overlapping smoothed files in the 1-day
+     orbit archive.
+  2. Debugged the smoothed filename parsing because the cycle and track
+     positions in the filename were initially indexed incorrectly.
+  3. Verified the smoothed file variable layout and selected the appropriate
+     SSH variable from the product.
+  4. Built smoothed center-profile extraction and computed an ensemble-average
+     spectrum.
+  5. Produced comparison figures for unsmoothed and smoothed spectra.
+
+RESULT
+  - Overlap existed for cycles 490 to 530.
+  - 36 smoothed files matched the overlapping cycle set.
+  - The initial smoothed spectrum looked suspiciously smooth, which motivated
+    further refinement.
+
+
+===============================================================================
+PHASE 05 - MATCHED 600 KM OFFSHORE SEGMENT REWORK
+===============================================================================
+
+PROMPT
+  Redo the L3 unsmoothed and L3 smoothed spectra so all segments cover a
+  similar physical length of at least 600 km.
+
+  Use mild linear interpolation to fill small gaps.
+  Do not include near-coast samples.
+  Use information from other notebooks as guidance.
+
+AGENT ACTIONS
+  1. Reworked Step 5 to use a unified extraction pipeline for both products.
+  2. Added helper functions for:
+       - short-gap linear interpolation,
+       - cumulative along-track distance,
+       - centered 600 km segment selection,
+       - offshore filtering using local cross-track valid support,
+       - common-k interpolation and confidence-interval computation.
+  3. Recomputed matched ensembles using only cycles valid in both products.
+  4. Fixed a missing scipy.stats import during confidence-interval
+     calculation.
+
+RESULT
+  - 71 unsmoothed usable profiles remained.
+  - 72 smoothed usable profiles remained.
+  - 36 cycles had valid profiles in both products.
+  - Median segment lengths were about 600 km for both products.
+  - This established a physically consistent comparison baseline.
+
+
+===============================================================================
+PHASE 06 - RESTORE NATIVE HIGH-K RANGE AND ADD DIAGNOSTICS
+===============================================================================
+
+PROMPT
+  Restore the wider unsmoothed k-range so high wavenumbers remain visible.
+  Make xlim extend above 1 cycles/km.
+  Add slope guides similar to the Wave-Vortex notebook.
+  Explain why the L3 2 km smoothed spectra looked so clean at high
+  wavenumbers.
+  Provide intermediate cells using fewer cycles and a single segment for the
+  smoothed data.
+
+AGENT ACTIONS
+  1. Changed the averaging workflow so each product retained its native
+     spectral support.
+  2. Preserved the unsmoothed high-k tail instead of truncating it to the
+     smoothed support.
+  3. Added slope guides labeled k^-2 and k^-5/3.
+  4. Added diagnostic cells for:
+       - a fewer-cycle smoothed average,
+       - a single-segment smoothed spectrum,
+       - a combined diagnostic comparison plot.
+  5. Verified that the smoothed Nyquist limit was much lower because dx was
+     about 2 km, compared with about 0.24 km for the unsmoothed product.
+
+RESULT
+  - Native unsmoothed k-range extended to about 2.095 cycles/km.
+  - Native smoothed k-range extended to about 0.248 cycles/km.
+  - The clean appearance of the smoothed spectrum at high k was explained by
+    explicit smoothing, lower Nyquist support, and ensemble averaging.
+
+
+===============================================================================
+PHASE 07 - SMOOTHED INDIVIDUAL-SPECTRA DIAGNOSTICS
+===============================================================================
+
+PROMPT
+  Add a cell plotting all individual spectra contributing to the fewer-cycle
+  smoothed average.
+
+AGENT ACTIONS
+  1. Inserted a diagnostic plot showing all 16 individual spectra in the
+     reduced smoothed subset.
+  2. Overlaid the fewer-cycle mean and its 95% confidence interval.
+
+RESULT
+  - The plot showed that individual smoothed spectra were still noisy and
+    spread out, while averaging strongly reduced that variance.
+
+
+===============================================================================
+PHASE 08 - UNSMOOTHED RANDOM-MEMBER DIAGNOSTICS
+===============================================================================
+
+PROMPT
+  Add a similar diagnostic cell for the L3 unsmoothed data, but use 30 random
+  spectral members.
+
+AGENT ACTIONS
+  1. Added a new diagnostic cell at the end of the notebook.
+  2. Used a reproducible random-number-generator seed.
+  3. Plotted 30 random unsmoothed individual spectra with the full unsmoothed
+     mean and 95% confidence interval.
+
+RESULT
+  - The plot showed much larger high-k variance for the unsmoothed product
+    than for the smoothed product.
+  - The selected ensemble indices used for the plot were printed.
+
+
+===============================================================================
+PHASE 09 - STEP 7 FULL-SWATH PER-CYCLE AVERAGES, INITIAL VERSION
+===============================================================================
+
+PROMPT
+  Add code to extract and average all segments within the left and right swath
+  and plot that average for each cycle using L3 unsmoothed data.
+
+AGENT ACTIONS
+  1. Added Step 7 with extraction of all valid offshore 600 km segments from
+     both swath halves.
+  2. Averaged spectra within each cycle across all extracted segments.
+  3. Plotted one average spectrum per cycle.
+
+RESULT
+  - 36 cycles were processed.
+  - Most cycles contributed about 407 usable segments.
+  - The initial version combined left and right sides together.
+
+
+===============================================================================
+PHASE 10 - STEP 7 CORRECTION: SEPARATE LEFT AND RIGHT
+===============================================================================
+
+PROMPT
+  Correct the previous step so left and right are averaged separately.
+
+  Compare left and right for a finite number of cycles in a plot, using
+  3 random cycles, and produce two versions of that figure with different
+  random cycle selections.
+
+  Then plot the time series of averages for all cycles separately for left and
+  right, using a color scheme or colormap with no labeled legend.
+
+AGENT ACTIONS
+  1. Rewrote Step 7 to compute separate per-cycle left-side and right-side
+     spectral averages.
+  2. Added two reproducible random 3-cycle comparison figures:
+       - comparison set A,
+       - comparison set B.
+  3. Replaced the combined all-cycle figure with side-by-side left and right
+     panels using a cycle colormap and colorbar instead of a legend.
+  4. Recomputed per-cycle segment counts for each side.
+
+RESULT
+  - Left averages: 36 cycles.
+  - Right averages: 36 cycles.
+  - Both sides were available for 36 cycles.
+  - Example segment counts:
+       - 490: left=203, right=204
+       - 494: left=154, right=100
+       - 509: left=86, right=105
+  - Random comparison cycles:
+       - Set A: 501, 504, 518
+       - Set B: 497, 513, 516
+
+
+===============================================================================
+PHASE 11 - SAVE THE FULL THREAD TO DISK
+===============================================================================
+
+PROMPT
+  Dump the entire thread, including summarized versions of the assistant steps
+  between prompts, into a text file and save it.
+
+AGENT ACTIONS
+  1. Created the conversation dump file in the workspace root.
+
+RESULT
+  - Original saved path:
+    /home/smullersoares/projects/science/coastal_open_ocn_xchange/conversation_thread_dump_2026-04-02.txt
+
+
+===============================================================================
+NOTEBOOK STATE SUMMARY
+===============================================================================
+
+Primary notebook
+  /home/smullersoares/projects/science/coastal_open_ocn_xchange/
+  cycle503_california_pass_reader.ipynb
+
+Major sections present
+  - Step 1: cycle 503 California pass identification.
+  - Step 2: dominant pass inspection and map.
+  - Step 3: one-cycle center-swath PSD.
+  - Step 4: all-cycle center-profile ensemble spectrum.
+  - Step 5: matched 600 km offshore unsmoothed vs smoothed comparison, with
+    native high-k support retained for the unsmoothed product and slope guides
+    added.
+  - Step 6: diagnostics for smoothed spectra, including fewer-cycle,
+    single-segment, and individual-spectrum plots, plus an unsmoothed
+    30-random-member plot.
+  - Step 7: per-cycle unsmoothed left-right swath averages, random-cycle
+    left-vs-right comparisons, and all-cycle colormap panels.
+
+
+===============================================================================
+KEY TECHNICAL NOTES
+===============================================================================
+
+  - The unsmoothed product retains high-k support up to about 2.1 cycles/km
+    in the native-support averaging.
+  - The smoothed product only supports high k up to about 0.25 cycles/km
+    because of larger effective spacing and smoothing.
+  - Offshore filtering uses local cross-track valid support to suppress
+    near-coast contamination.
+  - Gap filling is intentionally mild: only short NaN gaps up to 3 samples are
+    linearly interpolated.
+  - Segment selection uses centered 600 km segments to stabilize physical
+    comparability between products and between cycles.
+
+
+===============================================================================
+END OF DUMP
+===============================================================================

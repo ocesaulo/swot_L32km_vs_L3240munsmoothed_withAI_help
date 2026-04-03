@@ -1,0 +1,10 @@
+name: swot_l3
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - requests
+  - tqdm
+  - beautifulsoup4
+  - lxml

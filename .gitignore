@@ -1,0 +1,13 @@
+# Python cache/artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Environment and editor artifacts
+.env
+.venv/
+.DS_Store
+
+# Downloaded SWOT data products
+swot_l3_expert/
